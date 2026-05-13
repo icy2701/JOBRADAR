@@ -1,1 +1,1 @@
-# Job Application Tracker API
+# JobRadar — Job Application Tracker
