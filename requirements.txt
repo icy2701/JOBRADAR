@@ -10,3 +10,4 @@ pytest
 httpx
 boto3
 python-dotenv
+pydantic-settings
