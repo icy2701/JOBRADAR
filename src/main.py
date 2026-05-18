@@ -63,11 +63,29 @@ def login(
 @app.post("/applications",
           response_model=schemas.JobApplicationResponse,
           status_code=status.HTTP_201_CREATED,
-          tags=["Applications"])    
+          tags=["Applications"])
+
 def create_application(
-    application: schemas.JobApplicationCreate, 
-    db: Session = Depends(get_db), 
-    current_user: models.User = Depends(auth.get_current_user)):
+    application: schemas.JobApplicationCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # Only scrape if URL provided and details are missing
+    if application.job_url and (
+        not application.company_name or not application.role_title
+    ):
+        from src.scraper import scrape_job
+        scraped = scrape_job(application.job_url)
+
+        # Fill in only the fields that are missing
+        # Never overwrite what the user explicitly provided
+        if not application.company_name and scraped.get("company_name"):
+            application.company_name = scraped["company_name"]
+        if not application.role_title and scraped.get("role_title"):
+            application.role_title = scraped["role_title"]
+        if not application.job_description and scraped.get("job_description"):
+            application.job_description = scraped["job_description"]
+
     return crud.create_application(db, application, current_user.id)
 
 

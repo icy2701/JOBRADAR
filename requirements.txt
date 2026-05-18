@@ -12,3 +12,6 @@ boto3
 python-dotenv
 pydantic-settings
 email-validator
+beautifulsoup4
+httpx
+lxml
