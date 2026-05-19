@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends , HTTPException, status
+from fastapi import FastAPI, Depends , HTTPException, status ,UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from src.database import get_db
@@ -152,3 +152,43 @@ def delete_application(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Application not found"
         )
+    
+
+@app.post("/applications/{application_id}/resume",
+          response_model=schemas.JobApplicationResponse,
+          tags=["Applications"])
+
+async def upload_resume(
+    application_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    # Verify application exists and belongs to current user
+    application = crud.get_application_by_id(
+        db, application_id, current_user.id
+    )
+    if not application:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Application not found"
+        )
+
+    # Read file bytes — async because file I/O is non-blocking
+    file_bytes = await file.read()
+
+    # Upload to S3 — returns public URL
+    from src.s3 import upload_resume as s3_upload
+    resume_url = s3_upload(
+        file_bytes=file_bytes,
+        filename=file.filename,
+        content_type=file.content_type,
+        user_id=current_user.id
+    )
+
+    # Save S3 URL to the application record
+    application.resume_url = resume_url
+    db.commit()
+    db.refresh(application)
+
+    return application
