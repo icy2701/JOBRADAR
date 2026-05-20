@@ -1,0 +1,75 @@
+name: JobRadar CI
+
+# Triggers
+# Run on every push to main and on every pull request to main
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run test suite
+    runs-on: ubuntu-latest  # Fresh Ubuntu machine every time
+
+    # Services 
+    # Spin up a real PostgreSQL database for the test run
+    # Tests use SQLite (in conftest.py) so this is just for future integration tests
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: jobradar_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # Step 1: Download your code 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      #  Step 2: Install Python 
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Step 3: Cache pip packages 
+      # If requirements.txt hasn't changed, skip downloading packages
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Step 4: Install dependencies
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Step 5: Set environment variables 
+      # Tests use SQLite so DATABASE_URL isn't used by tests but config.py requires it to exist or it throws on import
+      - name: Set environment variables
+        run: |
+          echo "DATABASE_URL=postgresql://postgres:password@localhost:5432/jobradar_test" >> $GITHUB_ENV
+          echo "SECRET_KEY=test-secret-key-for-ci-only" >> $GITHUB_ENV
+          echo "ALGORITHM=HS256" >> $GITHUB_ENV
+          echo "ACCESS_TOKEN_EXPIRE_MINUTES=30" >> $GITHUB_ENV
+          echo "AWS_ACCESS_KEY_ID=fake-key-for-ci" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=fake-secret-for-ci" >> $GITHUB_ENV
+          echo "AWS_BUCKET_NAME=jobradar-resumes" >> $GITHUB_ENV
+
+      #  Step 6: Run tests 
+      # -v = verbose output — shows each test name and pass/fail
+      # --tb=short = short traceback on failure — easier to read
+      - name: Run pytest
+        run: pytest tests/test_api.py -v --tb=short
