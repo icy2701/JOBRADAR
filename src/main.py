@@ -11,6 +11,18 @@ app=FastAPI(
     version="1.0.0"
 )
 
+# CORS 
+# Allows Chrome extension and any frontend to call the API
+# Chrome extensions have origin: chrome-extension://<id>
+# allow_origins=["*"] permits all origins — fine for a portfolio project
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 #Health check
 @app.get("/health",tags=["Health"])
 def health_check():
