@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy.orm import Session
 from src import models, schemas
 from src.auth import hash_password
@@ -92,5 +94,46 @@ def get_applications_by_status(db:Session, user_id:int, status:str = None):
     if status:
         query = query.filter(models.JobApplication.status == status)
     return query.order_by(models.JobApplication.created_at.desc()).all()
+
+
+def set_user_otp(db: Session, user_id: int, otp: str, expires: datetime):
+    """
+    Saves OTP code and expiry to user row.
+    Called during registration and resend OTP.
+    """
+    from datetime import datetime
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user:
+        user.otp_code    = otp
+        user.otp_expires = expires
+        db.commit()
+
+
+def verify_user_otp(db: Session, email: str, otp: str):
+    """
+    Checks if OTP is correct and not expired.
+    If valid — marks user as verified and clears OTP.
+    Returns True if verified, False otherwise.
+    """
+    from datetime import datetime, timezone
+    user = db.query(models.User).filter(
+        models.User.email == email
+    ).first()
+
+    if not user:
+        return False
+    if not user.otp_code or not user.otp_expires:
+        return False
+    if user.otp_code != otp:
+        return False
+    if datetime.now(timezone.utc) > user.otp_expires:
+        return False
+
+    # Mark as verified and clear OTP
+    user.is_verified = True
+    user.otp_code    = None
+    user.otp_expires = None
+    db.commit()
+    return True
     
 
