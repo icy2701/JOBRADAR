@@ -1,23 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JobRadar</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
   <div class="container">
 
-    <!-- Header -->
     <div class="header">
       <span class="logo">📡</span>
       <span class="title">JobRadar</span>
     </div>
 
-    <!-- Login form — shown when not logged in -->
     <div id="login-section">
       <p class="label">Sign in to JobRadar</p>
       <input type="email" id="email" placeholder="Email" />
@@ -26,22 +22,23 @@
       <p id="login-error" class="error"></p>
     </div>
 
-    <!-- Job section — shown when logged in -->
     <div id="job-section" style="display:none">
       <div class="job-info">
         <p class="field-label">Role</p>
-        <input type="text" id="role-title" placeholder="Role title" style="background:#0f172a;border:1px solid #334155;
-                  color:#e2e8f0;border-radius:4px;padding:6px 8px;
-                  font-size:13px;width:100%;margin-bottom:8px" />
+        <input type="text" id="role-title" placeholder="Role title"
+               style="background:#0f172a;border:1px solid #334155;
+                      color:#e2e8f0;border-radius:4px;padding:6px 8px;
+                      font-size:13px;width:100%;margin-bottom:8px" />
 
         <p class="field-label">Company</p>
-        <input type="text" id="company-name" placeholder="Company name" style="background:#0f172a;border:1px solid #334155;
-                  color:#e2e8f0;border-radius:4px;padding:6px 8px;
-                  font-size:13px;width:100%;margin-bottom:8px" />
+        <input type="text" id="company-name" placeholder="Company name"
+               style="background:#0f172a;border:1px solid #334155;
+                      color:#e2e8f0;border-radius:4px;padding:6px 8px;
+                      font-size:13px;width:100%;margin-bottom:8px" />
 
         <p class="field-label">Source</p>
-        <p id="source" class="field-value" style="font-size:12px;
-       color:#64748b;margin-bottom:4px"></p>
+        <p id="source" class="field-value"
+           style="font-size:12px;color:#64748b;margin-bottom:4px"></p>
       </div>
 
       <button id="save-btn">💾 Save to JobRadar</button>
@@ -49,13 +46,7 @@
       <p id="save-status" class="status"></p>
     </div>
 
-    <button id="save-btn">💾 Save to JobRadar</button>
-    <button id="logout-btn" class="secondary">Logout</button>
-    <p id="save-status" class="status"></p>
-  </div>
-
   </div>
   <script src="popup.js"></script>
 </body>
-
 </html>
