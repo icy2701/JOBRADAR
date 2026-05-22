@@ -1,3 +1,5 @@
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-aisi27%2Fjobradar-blue)](https://hub.docker.com/r/aisi27/jobradar)
+
 # 📡 JobRadar — Job Application Tracker
 
 A full-stack job tracking system with a Chrome extension, FastAPI backend, and web dashboard. Save jobs from any job board with one click, manage your application pipeline, and upload resumes — all in one place.
@@ -43,6 +45,9 @@ Clone the repo and start the full stack with one command:
     docker-compose up --build
 
 Open http://localhost:8000/docs for the Swagger UI.
+
+# Or pull directly from Docker Hub
+docker pull aisi27/jobradar:latest
 
 ---
 
