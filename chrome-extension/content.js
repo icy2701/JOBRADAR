@@ -92,7 +92,6 @@
     const company = document.querySelector(
       ".company-name, [class*='companyName'], [class*='company-name']"
     );
-
     return {
       role_title:      title   ? cleanText(title.innerText)   : "",
       company_name:    company ? cleanText(company.innerText) : "",
@@ -101,52 +100,44 @@
     };
   }
 
-  // Generic — works on any job site
+  // Generic for all other sites
   function parseGeneric() {
     let roleTitle   = "";
     let companyName = "";
 
-    const pageTitle = document.title;
+    // H1 is most reliable for job title
+    const h1 = document.querySelector("h1");
+    if (h1) roleTitle = cleanText(h1.innerText);
 
-    if (pageTitle) {
-      // "Role | Company | Site"
-      const pipeParts = pageTitle.split("|").map(p => p.trim()).filter(Boolean);
-      if (pipeParts.length >= 2) {
-        roleTitle   = pipeParts[0];
-        companyName = pipeParts[1];
-      }
-      // "Role at Company"
-      else if (pageTitle.includes(" at ")) {
-        const parts = pageTitle.split(" at ");
-        roleTitle   = parts[0].trim();
-        companyName = parts[1].trim();
-      }
-      // "Role - Company"
-      else if (pageTitle.includes(" - ")) {
-        const parts = pageTitle.split(" - ");
-        roleTitle   = parts[0].trim();
-        companyName = parts[1].trim();
-      } else {
-        roleTitle = pageTitle.trim();
-      }
+    // Try JSON-LD structured data first
+    const jsonLd = document.querySelector('script[type="application/ld+json"]');
+    if (jsonLd) {
+      try {
+        const data = JSON.parse(jsonLd.innerText);
+        if (data["@type"] === "JobPosting") {
+          roleTitle   = roleTitle   || data.title || "";
+          companyName = companyName ||
+            (data.hiringOrganization && data.hiringOrganization.name) || "";
+        }
+      } catch (e) {}
     }
 
-    // og:title fallback
-    if (!roleTitle || !companyName) {
+    // og:title only for company — not role since H1 is better
+    if (!companyName) {
       const ogTitle = getMetaContent("og:title");
       if (ogTitle) {
         if (ogTitle.includes(" | ")) {
           const parts = ogTitle.split(" | ");
-          roleTitle   = roleTitle   || parts[0].trim();
-          companyName = companyName || parts[1].trim();
+          if (!roleTitle) roleTitle = parts[0].trim();
+          companyName = parts[parts.length - 2].trim();
         } else if (ogTitle.includes(" at ")) {
           const parts = ogTitle.split(" at ");
-          roleTitle   = roleTitle   || parts[0].trim();
-          companyName = companyName || parts[1].trim();
+          if (!roleTitle) roleTitle = parts[0].trim();
+          companyName = parts[1].trim();
         } else if (ogTitle.includes(" - ")) {
           const parts = ogTitle.split(" - ");
-          roleTitle   = roleTitle   || parts[0].trim();
-          companyName = companyName || parts[1].trim();
+          if (!roleTitle) roleTitle = parts[0].trim();
+          companyName = parts[1].trim();
         }
       }
     }
@@ -156,13 +147,24 @@
       companyName = getMetaContent("og:site_name") || "";
     }
 
-    // h1 for role
-    if (!roleTitle) {
-      const h1 = document.querySelector("h1");
-      if (h1) roleTitle = cleanText(h1.innerText);
+    // Common company selectors
+    if (!companyName) {
+      const companySelectors = [
+        "[class*='company-name']",
+        "[class*='companyName']",
+        "[class*='employer']",
+        "[itemprop='name']"
+      ];
+      for (const sel of companySelectors) {
+        const el = document.querySelector(sel);
+        if (el && el.innerText && el.innerText.length < 60) {
+          companyName = cleanText(el.innerText);
+          break;
+        }
+      }
     }
 
-    // Description from common selectors
+    // Description
     const descSelectors = [
       "#job-description", ".job-description",
       "[class*='jobDescription']", "[id*='jobDescription']",
@@ -182,16 +184,11 @@
     // Detect source from URL
     const url = window.location.href;
     let source = "other";
-    if (url.includes("linkedin.com"))     source = "linkedin";
-    else if (url.includes("indeed.com"))  source = "indeed";
-    else if (url.includes("stepstone"))   source = "stepstone";
-    else if (url.includes("xing.com"))    source = "xing";
-    else if (url.includes("monster"))     source = "monster";
-    else if (url.includes("glassdoor"))   source = "other";
-    else if (url.includes("absolventa"))  source = "other";
-    else if (url.includes("studentjob")) source = "other";
-    else if (url.includes("workwise"))    source = "other";
-    else if (url.includes("zenjob"))      source = "other";
+    if (url.includes("linkedin.com"))    source = "linkedin";
+    else if (url.includes("indeed.com")) source = "indeed";
+    else if (url.includes("stepstone"))  source = "stepstone";
+    else if (url.includes("xing.com"))   source = "xing";
+    else if (url.includes("monster"))    source = "monster";
 
     return {
       role_title:      roleTitle,
@@ -206,10 +203,10 @@
     const url = window.location.href;
     let data;
 
-    if (url.includes("linkedin.com"))     data = parseLinkedIn();
-    else if (url.includes("indeed.com"))  data = parseIndeed();
+    if (url.includes("linkedin.com"))      data = parseLinkedIn();
+    else if (url.includes("indeed.com"))   data = parseIndeed();
     else if (url.includes("stepstone.de")) data = parseStepStone();
-    else if (url.includes("xing.com"))    data = parseXing();
+    else if (url.includes("xing.com"))     data = parseXing();
     else                                   data = parseGeneric();
 
     data.job_url = url;

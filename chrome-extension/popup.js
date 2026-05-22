@@ -1,10 +1,7 @@
 // popup.js — controls the extension popup UI
-// Handles login, reads extracted job data, saves to JobRadar API
 
-// Config 
 const API_BASE = "https://jobradar-pyss.onrender.com";
 
-// DOM elements 
 const loginSection  = document.getElementById("login-section");
 const jobSection    = document.getElementById("job-section");
 const emailInput    = document.getElementById("email");
@@ -18,10 +15,8 @@ const roleTitleEl   = document.getElementById("role-title");
 const companyEl     = document.getElementById("company-name");
 const sourceEl      = document.getElementById("source");
 
-// State 
 let currentJobData = null;
 
-// Init 
 document.addEventListener("DOMContentLoaded", () => {
   chrome.storage.local.get(["token"], (result) => {
     if (result.token) {
@@ -32,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-//  Login 
+// Login
 loginBtn.addEventListener("click", async () => {
   const email    = emailInput.value.trim();
   const password = passwordInput.value.trim();
@@ -46,7 +41,6 @@ loginBtn.addEventListener("click", async () => {
   loginBtn.disabled    = true;
   loginError.textContent = "";
 
-  // Retry up to 3 times — handles Render cold start (30-50 second wake up)
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       loginBtn.textContent = attempt > 1
@@ -67,20 +61,19 @@ loginBtn.addEventListener("click", async () => {
 
       if (response.ok) {
         const data = await response.json();
-        // Store token in chrome.storage — persists across popup open/close
         chrome.storage.local.set({ token: data.access_token }, () => {
           showJobSection();
         });
         return;
       } else {
-        loginError.textContent = "Invalid email or password";
+        const data = await response.json();
+        loginError.textContent = data.detail || "Invalid email or password";
         break;
       }
     } catch (error) {
       if (attempt === 3) {
-        loginError.textContent = "API is waking up — wait 30 seconds and try again";
+        loginError.textContent = "API is waking up. Wait 30 seconds and try again.";
       }
-      // Wait 5 seconds before retrying
       await new Promise(r => setTimeout(r, 5000));
     }
   }
@@ -89,26 +82,24 @@ loginBtn.addEventListener("click", async () => {
   loginBtn.disabled    = false;
 });
 
-//  Logout 
+// Logout
 logoutBtn.addEventListener("click", () => {
   chrome.storage.local.remove(["token"], () => {
     showLoginSection();
   });
 });
 
-//  Save job 
+// Save job
 saveBtn.addEventListener("click", async () => {
-  if (!currentJobData) {
-    saveStatus.textContent = "No job data found on this page";
-    saveStatus.className   = "status error";
-    return;
-  }
-
   chrome.storage.local.get(["token"], async (result) => {
     if (!result.token) {
       showLoginSection();
       return;
     }
+
+    // Read from editable fields — user may have corrected the values
+    const roleTitle   = roleTitleEl.value.trim();
+    const companyName = companyEl.value.trim();
 
     saveBtn.textContent = "Saving...";
     saveBtn.disabled    = true;
@@ -124,11 +115,11 @@ saveBtn.addEventListener("click", async () => {
           "Authorization": `Bearer ${result.token}`
         },
         body: JSON.stringify({
-          job_url:         currentJobData.job_url         || "",
-          company_name:    currentJobData.company_name    || "",
-          role_title:      currentJobData.role_title      || "",
-          source:          currentJobData.source          || "other",
-          job_description: currentJobData.job_description || ""
+          job_url:         currentJobData ? currentJobData.job_url : "",
+          company_name:    companyName,
+          role_title:      roleTitle,
+          source:          currentJobData ? currentJobData.source : "other",
+          job_description: currentJobData ? currentJobData.job_description : ""
         }),
         signal: controller.signal
       });
@@ -136,27 +127,28 @@ saveBtn.addEventListener("click", async () => {
       clearTimeout(timeout);
 
       if (response.ok) {
-        saveStatus.textContent = "✅ Saved to JobRadar!";
+        saveStatus.textContent = "Saved to JobRadar!";
         saveStatus.className   = "status success";
-        saveBtn.textContent    = "✅ Saved";
+        saveBtn.textContent    = "Saved";
       } else if (response.status === 401) {
-        // Token expired — send back to login
         chrome.storage.local.remove(["token"]);
         showLoginSection();
       } else {
         saveStatus.textContent = "Failed to save. Try again.";
         saveStatus.className   = "status error";
+        saveBtn.textContent    = "Save to JobRadar";
+        saveBtn.disabled       = false;
       }
     } catch (error) {
-      saveStatus.textContent = "API is waking up — try again in 30 seconds";
+      saveStatus.textContent = "API waking up. Try again in 30 seconds.";
       saveStatus.className   = "status error";
-    } finally {
-      saveBtn.disabled = false;
+      saveBtn.textContent    = "Save to JobRadar";
+      saveBtn.disabled       = false;
     }
   });
 });
 
-//  UI helpers 
+// UI helpers
 function showLoginSection() {
   loginSection.style.display = "block";
   jobSection.style.display   = "none";
@@ -181,14 +173,15 @@ function loadJobData() {
         setTimeout(() => {
           chrome.storage.local.get(["jobData"], (result) => {
             if (result.jobData) {
-              currentJobData          = result.jobData;
-              roleTitleEl.textContent = currentJobData.role_title   || "Not detected";
-              companyEl.textContent   = currentJobData.company_name || "Not detected";
-              sourceEl.textContent    = currentJobData.source       || "other";
+              currentJobData      = result.jobData;
+              roleTitleEl.value   = currentJobData.role_title   || "";
+              companyEl.value     = currentJobData.company_name || "";
+              sourceEl.textContent = currentJobData.source      || "other";
             } else {
-              roleTitleEl.textContent = "Not detected";
-              companyEl.textContent   = "Not detected";
-              sourceEl.textContent    = "other";
+              currentJobData      = null;
+              roleTitleEl.value   = "";
+              companyEl.value     = "";
+              sourceEl.textContent = "other";
             }
           });
         }, 500);
