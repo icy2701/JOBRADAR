@@ -38,13 +38,29 @@ def client():
 
 @pytest.fixture(scope="session")
 def auth_token(client):
-     # Register test user
+    """
+    Register a test user, manually verify them, then return their JWT token.
+    Bypasses OTP email verification for testing purposes.
+    """
+    # Register test user
     client.post("/auth/register", json={
         "email": "testuser@jobradar.com",
         "password": "testpass123"
     })
 
-    # Login and get token
+    # Manually verify the user in the test database
+    # bypasses OTP since we cannot send real emails in CI
+    db = TestingSessionLocal()
+    from src.models import User
+    user = db.query(User).filter(
+        User.email == "testuser@jobradar.com"
+    ).first()
+    if user:
+        user.is_verified = True
+        db.commit()
+    db.close()
+
+    # Now login
     response = client.post("/auth/login", data={
         "username": "testuser@jobradar.com",
         "password": "testpass123"
