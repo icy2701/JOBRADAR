@@ -17,3 +17,4 @@ beautifulsoup4
 httpx
 lxml
 pytest-asyncio
+resend
