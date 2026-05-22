@@ -16,32 +16,49 @@
     }
 
     // Parsers 
-    function parseLinkedIn(){
-        const title = document.querySelector("h1.top-card-layout__title, h1.job-title, h1");
-        const company = document.querySelector("a.topcard__org-name-link, .top-card-layout__second-subline a, .topcard__flavor--black-link");
-        const description = document.querySelector(".description__text, .show-more-less-html__markup");
+    function parseLinkedIn() {
+  // LinkedIn page title format: "Job Title | Company | LinkedIn"
+  const pageTitle = document.title;
+  let roleTitle = "";
+  let companyName = "";
 
-        // Fallback to og:title which LinkedIn formats as "Job Title at Company"
-        let roleTitle = title ? cleanText(title.innerText) : "";
-        let companyName = company ? cleanText(company.innerText) : "";
+  if (pageTitle && pageTitle.includes("| LinkedIn")) {
+    // Remove "| LinkedIn" from the end
+    const withoutLinkedIn = pageTitle.replace("| LinkedIn", "").trim();
+    // Split by " | "
+    const parts = withoutLinkedIn.split(" | ").map(p => p.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      roleTitle = parts[0];      // First part = job title
+      companyName = parts[1];    // Second part = company
+    } else if (parts.length === 1) {
+      roleTitle = parts[0];
+    }
+  }
 
-    if (!roleTitle || !companyName) {
-      const ogTitle = getMetaContent("og:title");
-      if (ogTitle && ogTitle.includes(" at ")) {
-        const parts = ogTitle.split(" at ");
-        roleTitle = roleTitle || parts[0].trim();
-        companyName = companyName || parts[1].trim();
+  // Fallback to og:title
+  if (!roleTitle || !companyName) {
+    const ogTitle = getMetaContent("og:title");
+    if (ogTitle) {
+      const parts = ogTitle.split(" | ").map(p => p.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        roleTitle = roleTitle || parts[0];
+        companyName = companyName || parts[1];
       }
     }
-
-    return {
-      role_title: roleTitle,
-      company_name: companyName,
-      job_description: description ?
-        cleanText(description.innerText).substring(0, 2000) : "",
-      source: "linkedin"
-    };
   }
+
+  const description = document.querySelector(
+    ".description__text, .show-more-less-html__markup"
+  );
+
+  return {
+    role_title: roleTitle,
+    company_name: companyName,
+    job_description: description ?
+      cleanText(description.innerText).substring(0, 2000) : "",
+    source: "linkedin"
+  };
+}
 
   function parseIndeed() {
     const title = document.querySelector(
