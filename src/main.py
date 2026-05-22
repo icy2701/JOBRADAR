@@ -217,3 +217,25 @@ def dashboard():
     with open(template_path, "r") as f:
         return HTMLResponse(content=f.read(), status_code=200)
     
+
+@app.delete("/admin/reset-user/{email}",
+            tags=["Admin"])
+def reset_user(email: str, db: Session = Depends(get_db)):
+    """
+    Admin only — deletes a user and all their applications.
+    """
+    user = crud.get_user_by_email(db, email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Delete applications first
+    db.query(models.JobApplication).filter(
+        models.JobApplication.user_id == user.id
+    ).delete()
+    
+    # Then delete user
+    db.delete(user)
+    db.commit()
+    
+    return {"message": f"User {email} and all applications deleted"}
+    
