@@ -28,6 +28,7 @@ def send_otp_email(email: str, otp: str) -> bool:
     Returns True if sent successfully, False otherwise.
     """
     try:
+        print(f"OTP for {email}: {otp}")
         resend.Emails.send({
             "from": "JobRadar <onboarding@resend.dev>",
             "to": email,
