@@ -112,7 +112,7 @@ def list_applications(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    return crud.get_applications(db, current_user.id,status)
+    return crud.get_applications_by_status(db, current_user.id, status)
 
 
 @app.get("/applications/{application_id}",
