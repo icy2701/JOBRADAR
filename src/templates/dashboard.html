@@ -252,13 +252,12 @@
             background: none;
             border: none;
             cursor: pointer;
-            color: #64748b;
             font-size: 16px;
             padding: 4px;
         }
 
         .action-btn:hover {
-            color: #f87171;
+            opacity: 0.7;
         }
 
         .empty {
@@ -323,7 +322,7 @@
         <!-- Register screen -->
         <div id="screen-register" style="display:none">
             <h2>Create account</h2>
-            <input type="email" id="reg-email" placeholder="Your real email" />
+            <input type="email" id="reg-email" placeholder="Email" />
             <input type="password" id="reg-password" placeholder="Choose a password" />
             <input type="password" id="reg-password2" placeholder="Confirm password" />
             <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="register()">Register</button>
@@ -410,12 +409,51 @@
         </div>
     </div>
 
+    <!-- Edit modal -->
+    <div id="edit-modal" style="
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:100; align-items:center; justify-content:center;
+">
+        <div style="
+    background:#1e293b; border-radius:12px; padding:32px;
+    width:100%; max-width:480px; border:1px solid #334155;
+    margin:24px;
+  ">
+            <h3 style="margin-bottom:20px;font-size:16px">Edit Application</h3>
+
+            <label style="font-size:11px;color:#64748b;text-transform:uppercase;
+                  letter-spacing:0.05em;display:block;margin-bottom:4px">
+                Company Name
+            </label>
+            <input id="edit-company" type="text" placeholder="Company name" style="margin-bottom:12px" />
+
+            <label style="font-size:11px;color:#64748b;text-transform:uppercase;
+                  letter-spacing:0.05em;display:block;margin-bottom:4px">
+                Role Title
+            </label>
+            <input id="edit-role" type="text" placeholder="Role title" style="margin-bottom:12px" />
+
+            <label style="font-size:11px;color:#64748b;text-transform:uppercase;
+                  letter-spacing:0.05em;display:block;margin-bottom:4px">
+                Notes
+            </label>
+            <input id="edit-notes" type="text" placeholder="Any notes" style="margin-bottom:20px" />
+
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1" onclick="saveEdit()">Save</button>
+                <button class="btn btn-secondary" style="flex:1" onclick="closeEdit()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="toast" id="toast"></div>
 
     <script>
         let token = localStorage.getItem("jobradar_token");
         let currentFilter = null;
         let pendingEmail = "";
+        let editingId = null;
 
         window.onload = () => {
             if (token) showDashboard();
@@ -453,7 +491,6 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email, password })
                 });
-
                 if (res.ok) {
                     pendingEmail = email;
                     document.getElementById("otp-email-display").textContent = email;
@@ -482,7 +519,6 @@
                     `/auth/verify-otp?email=${encodeURIComponent(pendingEmail)}&otp=${otp}`,
                     { method: "POST" }
                 );
-
                 if (res.ok) {
                     showToast("Email verified! You can now login.");
                     showScreen("login");
@@ -513,7 +549,6 @@
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
                 });
-
                 if (res.ok) {
                     const data = await res.json();
                     token = data.access_token;
@@ -642,10 +677,16 @@
                         day: "numeric", month: "short"
                     })}
       </td>
-      <td>
+      <td style="display:flex;gap:4px">
         <button class="action-btn"
-                onclick="deleteApp(${app.id})"
-                title="Delete">trash</button>
+          onclick="openEdit(${app.id},
+            '${(app.company_name || '').replace(/'/g, "\\'")}',
+            '${(app.role_title || '').replace(/'/g, "\\'")}',
+            '${(app.notes || '').replace(/'/g, "\\'")}')"
+          title="Edit">✏️</button>
+        <button class="action-btn"
+          onclick="deleteApp(${app.id})"
+          title="Delete">🗑</button>
       </td>
     </tr>
   `).join("");
@@ -711,6 +752,51 @@
                 }
             } catch (e) {
                 showToast("Failed to delete", true);
+            }
+        }
+
+        // Edit modal
+        function openEdit(id, company, role, notes) {
+            editingId = id;
+            document.getElementById("edit-company").value = company;
+            document.getElementById("edit-role").value = role;
+            document.getElementById("edit-notes").value = notes;
+            document.getElementById("edit-modal").style.display = "flex";
+        }
+
+        function closeEdit() {
+            editingId = null;
+            document.getElementById("edit-modal").style.display = "none";
+        }
+
+        async function saveEdit() {
+            const company = document.getElementById("edit-company").value.trim();
+            const role = document.getElementById("edit-role").value.trim();
+            const notes = document.getElementById("edit-notes").value.trim();
+
+            try {
+                const res = await fetch(`/applications/${editingId}`, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        company_name: company,
+                        role_title: role,
+                        notes: notes
+                    })
+                });
+                if (res.ok) {
+                    showToast("Application updated");
+                    closeEdit();
+                    await loadApplications();
+                    updateStats();
+                } else {
+                    showToast("Failed to update", true);
+                }
+            } catch (e) {
+                showToast("Failed to update", true);
             }
         }
 
