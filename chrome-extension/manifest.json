@@ -14,19 +14,40 @@
   },
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "scripting"
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://www.linkedin.com/jobs/*",
-        "https://*.indeed.com/*",
-        "https://www.stepstone.de/*",
-        "https://www.xing.com/jobs/*",
-        "https://www.monster.de/*",
-        "https://*.greenhouse.io/*",
-        "https://*.lever.co/*",
-        "https://*.workday.com/*"
+         "https://www.linkedin.com/jobs/*",
+      "https://*.indeed.com/*",
+      "https://de.indeed.com/*",
+      "https://www.stepstone.de/*",
+      "https://www.xing.com/jobs/*",
+      "https://www.monster.de/*",
+      "https://*.greenhouse.io/*",
+      "https://*.lever.co/*",
+      "https://*.workday.com/*",
+      "https://www.glassdoor.de/*",
+      "https://www.glassdoor.com/*",
+      "https://www.absolventa.de/*",
+      "https://www.stellenwerk.de/*",
+      "https://www.studentjob.de/*",
+      "https://www.zenjob.com/*",
+      "https://www.workwise.io/*",
+      "https://www.jobvalley.com/*",
+      "https://www.jobs.de/*",
+      "https://www.bundesagentur.de/*",
+      "https://wellfound.com/*",
+      "https://remoteok.com/*",
+      "https://weworkremotely.com/*",
+      "https://relocate.me/*",
+      "https://europeremotely.com/*",
+      "https://*.internvolt.com/*",
+      "https://internshala.com/*",
+      "https://www.naukri.com/*",
+      "https://*/*"
       ],
       "js": ["content.js"],
       "run_at": "document_idle"

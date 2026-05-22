@@ -170,17 +170,29 @@ function showJobSection() {
 }
 
 function loadJobData() {
-  // Read job data extracted by content.js from chrome.storage
-  chrome.storage.local.get(["jobData"], (result) => {
-    if (result.jobData) {
-      currentJobData          = result.jobData;
-      roleTitleEl.textContent = currentJobData.role_title   || "Not detected";
-      companyEl.textContent   = currentJobData.company_name || "Not detected";
-      sourceEl.textContent    = currentJobData.source       || "other";
-    } else {
-      roleTitleEl.textContent = "No job detected";
-      companyEl.textContent   = "Navigate to a job page";
-      sourceEl.textContent    = "—";
-    }
+  chrome.storage.local.remove(["jobData"], () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs[0]) return;
+
+      chrome.scripting.executeScript({
+        target: { tabId: tabs[0].id },
+        files: ["content.js"]
+      }, () => {
+        setTimeout(() => {
+          chrome.storage.local.get(["jobData"], (result) => {
+            if (result.jobData) {
+              currentJobData          = result.jobData;
+              roleTitleEl.textContent = currentJobData.role_title   || "Not detected";
+              companyEl.textContent   = currentJobData.company_name || "Not detected";
+              sourceEl.textContent    = currentJobData.source       || "other";
+            } else {
+              roleTitleEl.textContent = "Not detected";
+              companyEl.textContent   = "Not detected";
+              sourceEl.textContent    = "other";
+            }
+          });
+        }, 500);
+      });
+    });
   });
 }
