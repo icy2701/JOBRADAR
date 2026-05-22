@@ -301,14 +301,64 @@
         </div>
     </div>
 
+    <!-- Auth section -->
     <div id="login-section">
-        <h2>Sign in to JobRadar</h2>
-        <input type="email" id="email" placeholder="Email" />
-        <input type="password" id="password" placeholder="Password" onkeydown="if(event.key==='Enter') login()" />
-        <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="login()">Login</button>
-        <p id="login-error" class="error"></p>
+
+        <!-- Login screen -->
+        <div id="screen-login">
+            <h2>Sign in to JobRadar</h2>
+            <input type="email" id="login-email" placeholder="Email" />
+            <input type="password" id="login-password" placeholder="Password"
+                onkeydown="if(event.key==='Enter') login()" />
+            <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="login()">Login</button>
+            <p style="text-align:center;margin-top:12px;font-size:12px;color:#64748b">
+                No account?
+                <span style="color:#6366f1;cursor:pointer" onclick="showScreen('register')">
+                    Register here
+                </span>
+            </p>
+            <p id="login-error" class="error"></p>
+        </div>
+
+        <!-- Register screen -->
+        <div id="screen-register" style="display:none">
+            <h2>Create account</h2>
+            <input type="email" id="reg-email" placeholder="Your real email" />
+            <input type="password" id="reg-password" placeholder="Choose a password" />
+            <input type="password" id="reg-password2" placeholder="Confirm password" />
+            <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="register()">Register</button>
+            <p style="text-align:center;margin-top:12px;font-size:12px;color:#64748b">
+                Already have an account?
+                <span style="color:#6366f1;cursor:pointer" onclick="showScreen('login')">
+                    Login here
+                </span>
+            </p>
+            <p id="register-error" class="error"></p>
+        </div>
+
+        <!-- OTP screen -->
+        <div id="screen-otp" style="display:none">
+            <h2>Verify your email</h2>
+            <p style="color:#94a3b8;font-size:13px;margin-bottom:16px">
+                Enter the 6-digit code sent to
+                <strong id="otp-email-display" style="color:#e2e8f0"></strong>
+            </p>
+            <input type="text" id="otp-input" placeholder="000000" maxlength="6"
+                style="text-align:center;font-size:24px;letter-spacing:10px"
+                onkeydown="if(event.key==='Enter') verifyOtp()" />
+            <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="verifyOtp()">Verify</button>
+            <p style="text-align:center;margin-top:12px;font-size:12px;color:#64748b">
+                Wrong email?
+                <span style="color:#6366f1;cursor:pointer" onclick="showScreen('register')">
+                    Go back
+                </span>
+            </p>
+            <p id="otp-error" class="error"></p>
+        </div>
+
     </div>
 
+    <!-- Dashboard section -->
     <div id="dashboard-section" style="display:none">
         <div class="container">
             <div class="stats">
@@ -365,25 +415,105 @@
     <script>
         let token = localStorage.getItem("jobradar_token");
         let currentFilter = null;
+        let pendingEmail = "";
 
         window.onload = () => {
             if (token) showDashboard();
         };
 
+        // Screen switcher
+        function showScreen(name) {
+            document.getElementById("screen-login").style.display = name === "login" ? "block" : "none";
+            document.getElementById("screen-register").style.display = name === "register" ? "block" : "none";
+            document.getElementById("screen-otp").style.display = name === "otp" ? "block" : "none";
+            document.getElementById("login-error").textContent = "";
+            document.getElementById("register-error").textContent = "";
+            document.getElementById("otp-error").textContent = "";
+        }
+
+        // Register
+        async function register() {
+            const email = document.getElementById("reg-email").value.trim();
+            const password = document.getElementById("reg-password").value.trim();
+            const password2 = document.getElementById("reg-password2").value.trim();
+            const errorEl = document.getElementById("register-error");
+
+            if (!email || !password) {
+                errorEl.textContent = "Please fill in all fields";
+                return;
+            }
+            if (password !== password2) {
+                errorEl.textContent = "Passwords do not match";
+                return;
+            }
+
+            try {
+                const res = await fetch("/auth/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (res.ok) {
+                    pendingEmail = email;
+                    document.getElementById("otp-email-display").textContent = email;
+                    showScreen("otp");
+                } else {
+                    const data = await res.json();
+                    errorEl.textContent = data.detail || "Registration failed";
+                }
+            } catch (e) {
+                errorEl.textContent = "Cannot connect to API";
+            }
+        }
+
+        // Verify OTP
+        async function verifyOtp() {
+            const otp = document.getElementById("otp-input").value.trim();
+            const errorEl = document.getElementById("otp-error");
+
+            if (!otp || otp.length !== 6) {
+                errorEl.textContent = "Please enter the 6-digit code";
+                return;
+            }
+
+            try {
+                const res = await fetch(
+                    `/auth/verify-otp?email=${encodeURIComponent(pendingEmail)}&otp=${otp}`,
+                    { method: "POST" }
+                );
+
+                if (res.ok) {
+                    showToast("Email verified! You can now login.");
+                    showScreen("login");
+                    document.getElementById("login-email").value = pendingEmail;
+                } else {
+                    const data = await res.json();
+                    errorEl.textContent = data.detail || "Invalid or expired OTP";
+                }
+            } catch (e) {
+                errorEl.textContent = "Cannot connect to API";
+            }
+        }
+
+        // Login
         async function login() {
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value.trim();
+            const email = document.getElementById("login-email").value.trim();
+            const password = document.getElementById("login-password").value.trim();
             const errorEl = document.getElementById("login-error");
+
             if (!email || !password) {
                 errorEl.textContent = "Please enter email and password";
                 return;
             }
+
             try {
                 const res = await fetch("/auth/login", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
                     body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
                 });
+
                 if (res.ok) {
                     const data = await res.json();
                     token = data.access_token;
@@ -391,20 +521,24 @@
                     document.getElementById("user-email").textContent = email;
                     showDashboard();
                 } else {
-                    errorEl.textContent = "Invalid email or password";
+                    const data = await res.json();
+                    errorEl.textContent = data.detail || "Invalid email or password";
                 }
             } catch (e) {
                 errorEl.textContent = "Cannot connect to API";
             }
         }
 
+        // Logout
         function logout() {
             localStorage.removeItem("jobradar_token");
             token = null;
             document.getElementById("login-section").style.display = "block";
             document.getElementById("dashboard-section").style.display = "none";
+            showScreen("login");
         }
 
+        // Dashboard
         async function showDashboard() {
             document.getElementById("login-section").style.display = "none";
             document.getElementById("dashboard-section").style.display = "block";
@@ -496,8 +630,8 @@
       <td>
         ${app.resume_url
                     ? `<a class="resume-link" href="${app.resume_url}"
-               target="_blank">📄 View / Download</a>`
-                    : `<label class="upload-label">⬆ Upload PDF
+               target="_blank">View / Download</a>`
+                    : `<label class="upload-label">Upload PDF
                <input class="upload-input" type="file"
                  accept="application/pdf"
                  onchange="uploadResume(${app.id}, this)"/>
@@ -511,7 +645,7 @@
       <td>
         <button class="action-btn"
                 onclick="deleteApp(${app.id})"
-                title="Delete">🗑</button>
+                title="Delete">trash</button>
       </td>
     </tr>
   `).join("");
