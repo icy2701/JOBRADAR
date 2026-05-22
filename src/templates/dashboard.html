@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobRadar Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #1e293b;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: #6366f1;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        #user-email {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid #334155;
+        }
+
+        .btn-secondary:hover {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        #login-section {
+            max-width: 400px;
+            margin: 80px auto;
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 32px;
+            border: 1px solid #334155;
+        }
+
+        #login-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: #e2e8f0;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #6366f1;
+        }
+
+        .error {
+            color: #f87171;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #334155;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .stat-card:hover,
+        .stat-card.active {
+            border-color: #6366f1;
+        }
+
+        .stat-card.active {
+            background: #1e1b4b;
+        }
+
+        .stat-n {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .stat-l {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .stat-saved .stat-n {
+            color: #94a3b8;
+        }
+
+        .stat-applied .stat-n {
+            color: #60a5fa;
+        }
+
+        .stat-interview .stat-n {
+            color: #a78bfa;
+        }
+
+        .stat-offer .stat-n {
+            color: #34d399;
+        }
+
+        .stat-rejected .stat-n {
+            color: #f87171;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1e293b;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+        }
+
+        th {
+            background: #0f172a;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-top: 1px solid #0f172a;
+            font-size: 13px;
+        }
+
+        tr:hover td {
+            background: #263044;
+        }
+
+        .company-link {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .company-link:hover {
+            text-decoration: underline;
+        }
+
+        .status-select {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .resume-link {
+            color: #34d399;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .resume-link:hover {
+            text-decoration: underline;
+        }
+
+        .upload-label {
+            color: #60a5fa;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .upload-label:hover {
+            text-decoration: underline;
+        }
+
+        .upload-input {
+            display: none;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 16px;
+            padding: 4px;
+        }
+
+        .action-btn:hover {
+            color: #f87171;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 48px;
+            color: #475569;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .toast.success {
+            background: #064e3b;
+            color: #34d399;
+            border: 1px solid #059669;
+        }
+
+        .toast.error {
+            background: #450a0a;
+            color: #f87171;
+            border: 1px solid #dc2626;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="logo">📡 JobRadar</div>
+        <div class="header-right">
+            <span id="user-email"></span>
+            <button class="btn btn-secondary" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div id="login-section">
+        <h2>Sign in to JobRadar</h2>
+        <input type="email" id="email" placeholder="Email" />
+        <input type="password" id="password" placeholder="Password" onkeydown="if(event.key==='Enter') login()" />
+        <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="login()">Login</button>
+        <p id="login-error" class="error"></p>
+    </div>
+
+    <div id="dashboard-section" style="display:none">
+        <div class="container">
+            <div class="stats">
+                <div class="stat-card active" onclick="filterByStatus(null)">
+                    <div class="stat-n" id="count-all">0</div>
+                    <div class="stat-l">Total</div>
+                </div>
+                <div class="stat-card stat-saved" onclick="filterByStatus('saved')">
+                    <div class="stat-n" id="count-saved">0</div>
+                    <div class="stat-l">Saved</div>
+                </div>
+                <div class="stat-card stat-applied" onclick="filterByStatus('applied')">
+                    <div class="stat-n" id="count-applied">0</div>
+                    <div class="stat-l">Applied</div>
+                </div>
+                <div class="stat-card stat-interview" onclick="filterByStatus('interview')">
+                    <div class="stat-n" id="count-interview">0</div>
+                    <div class="stat-l">Interview</div>
+                </div>
+                <div class="stat-card stat-offer" onclick="filterByStatus('offer')">
+                    <div class="stat-n" id="count-offer">0</div>
+                    <div class="stat-l">Offer</div>
+                </div>
+                <div class="stat-card stat-rejected" onclick="filterByStatus('rejected')">
+                    <div class="stat-n" id="count-rejected">0</div>
+                    <div class="stat-l">Rejected</div>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Company</th>
+                        <th>Role</th>
+                        <th>Source</th>
+                        <th>Status</th>
+                        <th>Resume</th>
+                        <th>Saved on</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="applications-table">
+                    <tr>
+                        <td colspan="8" class="empty">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let token = localStorage.getItem("jobradar_token");
+        let currentFilter = null;
+
+        window.onload = () => {
+            if (token) showDashboard();
+        };
+
+        async function login() {
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const errorEl = document.getElementById("login-error");
+            if (!email || !password) {
+                errorEl.textContent = "Please enter email and password";
+                return;
+            }
+            try {
+                const res = await fetch("/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    token = data.access_token;
+                    localStorage.setItem("jobradar_token", token);
+                    document.getElementById("user-email").textContent = email;
+                    showDashboard();
+                } else {
+                    errorEl.textContent = "Invalid email or password";
+                }
+            } catch (e) {
+                errorEl.textContent = "Cannot connect to API";
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("jobradar_token");
+            token = null;
+            document.getElementById("login-section").style.display = "block";
+            document.getElementById("dashboard-section").style.display = "none";
+        }
+
+        async function showDashboard() {
+            document.getElementById("login-section").style.display = "none";
+            document.getElementById("dashboard-section").style.display = "block";
+            await loadApplications();
+            updateStats();
+        }
+
+        async function loadApplications() {
+            try {
+                const url = currentFilter
+                    ? `/applications?status=${currentFilter}`
+                    : "/applications";
+                const res = await fetch(url, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (res.status === 401) { logout(); return; }
+                const apps = await res.json();
+                renderTable(apps);
+            } catch (e) {
+                showToast("Failed to load applications", true);
+            }
+        }
+
+        async function updateStats() {
+            try {
+                const res = await fetch("/applications", {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const apps = await res.json();
+                const counts = {
+                    all: 0, saved: 0, applied: 0,
+                    interview: 0, offer: 0, rejected: 0
+                };
+                apps.forEach(a => {
+                    counts.all++;
+                    if (counts[a.status] !== undefined) counts[a.status]++;
+                });
+                document.getElementById("count-all").textContent = counts.all;
+                document.getElementById("count-saved").textContent = counts.saved;
+                document.getElementById("count-applied").textContent = counts.applied;
+                document.getElementById("count-interview").textContent = counts.interview;
+                document.getElementById("count-offer").textContent = counts.offer;
+                document.getElementById("count-rejected").textContent = counts.rejected;
+            } catch (e) { }
+        }
+
+        function filterByStatus(status) {
+            currentFilter = status;
+            document.querySelectorAll(".stat-card").forEach(c =>
+                c.classList.remove("active")
+            );
+            const idx = [null, "saved", "applied", "interview", "offer", "rejected"]
+                .indexOf(status);
+            document.querySelectorAll(".stat-card")[idx < 0 ? 0 : idx]
+                .classList.add("active");
+            loadApplications();
+        }
+
+        function renderTable(apps) {
+            const tbody = document.getElementById("applications-table");
+            if (!apps.length) {
+                tbody.innerHTML = `<tr><td colspan="8" class="empty">
+      No applications found. Save jobs using the Chrome extension.
+    </td></tr>`;
+                return;
+            }
+            tbody.innerHTML = apps.map((app, i) => `
+    <tr id="row-${app.id}">
+      <td style="color:#475569">${i + 1}</td>
+      <td>
+        ${app.job_url
+                    ? `<a class="company-link" href="${app.job_url}"
+               target="_blank">${app.company_name || "Unknown"}</a>`
+                    : `<span>${app.company_name || "Unknown"}</span>`}
+      </td>
+      <td>${app.role_title || "—"}</td>
+      <td style="color:#64748b;text-transform:capitalize">
+        ${app.source || "—"}
+      </td>
+      <td>
+        <select class="status-select"
+                onchange="updateStatus(${app.id}, this.value)">
+          ${["saved", "applied", "interview", "offer", "rejected", "withdrawn"]
+                    .map(s => `<option value="${s}"
+              ${app.status === s ? "selected" : ""}>${s}</option>`)
+                    .join("")}
+        </select>
+      </td>
+      <td>
+        ${app.resume_url
+                    ? `<a class="resume-link" href="${app.resume_url}"
+               target="_blank">📄 View / Download</a>`
+                    : `<label class="upload-label">⬆ Upload PDF
+               <input class="upload-input" type="file"
+                 accept="application/pdf"
+                 onchange="uploadResume(${app.id}, this)"/>
+             </label>`}
+      </td>
+      <td style="color:#475569">
+        ${new Date(app.created_at).toLocaleDateString("en-GB", {
+                        day: "numeric", month: "short"
+                    })}
+      </td>
+      <td>
+        <button class="action-btn"
+                onclick="deleteApp(${app.id})"
+                title="Delete">🗑</button>
+      </td>
+    </tr>
+  `).join("");
+        }
+
+        async function updateStatus(id, newStatus) {
+            try {
+                const res = await fetch(`/applications/${id}`, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (res.ok) {
+                    showToast("Status updated to " + newStatus);
+                    updateStats();
+                }
+            } catch (e) {
+                showToast("Failed to update status", true);
+            }
+        }
+
+        async function uploadResume(appId, input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.type !== "application/pdf") {
+                showToast("Only PDF files allowed", true);
+                return;
+            }
+            const formData = new FormData();
+            formData.append("file", file);
+            showToast("Uploading resume...");
+            try {
+                const res = await fetch(`/applications/${appId}/resume`, {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${token}` },
+                    body: formData
+                });
+                if (res.ok) {
+                    showToast("Resume uploaded successfully");
+                    await loadApplications();
+                } else {
+                    showToast("Upload failed", true);
+                }
+            } catch (e) {
+                showToast("Upload failed", true);
+            }
+        }
+
+        async function deleteApp(id) {
+            if (!confirm("Delete this application?")) return;
+            try {
+                const res = await fetch(`/applications/${id}`, {
+                    method: "DELETE",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (res.status === 204) {
+                    showToast("Application deleted");
+                    loadApplications();
+                    updateStats();
+                }
+            } catch (e) {
+                showToast("Failed to delete", true);
+            }
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById("toast");
+            t.textContent = msg;
+            t.className = "toast " + (isError ? "error" : "success");
+            t.style.display = "block";
+            setTimeout(() => { t.style.display = "none"; }, 3000);
+        }
+    </script>
+</body>
+
+</html>

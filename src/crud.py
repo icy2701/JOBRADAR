@@ -83,3 +83,14 @@ def delete_application(db: Session, application_id: int, user_id: int):
     db.delete(db_app)
     db.commit()
     return True
+
+#Returns applications filtered by status.
+def get_application_by_status(db:Session, user_id:int, status:str = None):
+    query = db.query(models.JobApplication).filter(
+        models.JobApplication.user_id == user_id
+    )
+    if status:
+        query = query.filter(models.JobApplication.status == status)
+        return query.order_by(models.JobApplication.created_at.desc()).all()
+    
+

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends , HTTPException, status ,UploadFile, File
+from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from src.database import get_db
@@ -107,10 +108,11 @@ def create_application(
          tags=["Applications"])
 
 def list_applications(
+    status:str=None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    return crud.get_applications(db, current_user.id)
+    return crud.get_applications(db, current_user.id,status)
 
 
 @app.get("/applications/{application_id}",
@@ -205,3 +207,13 @@ async def upload_resume(
     db.refresh(application)
 
     return application
+
+
+@app.get("/dashboard", response_class=HTMLResponse, tags=["Dashboard"])
+def dashboard():
+    # Web dashboard : view, filter, and manage all job applications.Served from src/templates/dashboard.html
+    import os
+    template_path=os.path.join(os.path.dirname(__file__), "templates", "dashboard.html")
+    with open(template_path, "r") as f:
+        return HTMLResponse(content=f.read(), status_code=200)
+    
